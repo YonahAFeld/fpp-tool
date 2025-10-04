@@ -210,7 +210,7 @@ else:
 
 # --- Add New Record ---
 st.markdown("---")
-st.subheader("Add a new record")
+st.subheader("Add a new facility")
 with st.form("create_form"):
     create_inputs = {}
     for display_name in DESIRED_COLS:
