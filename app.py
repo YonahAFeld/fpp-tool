@@ -150,22 +150,22 @@ else:
         st.success(f"{len(results)} matches found")
         idx_options = list(results.index)
         chosen_idx = st.selectbox(
-            "Choose a record",
+            "Choose a facility",
             options=idx_options,
             format_func=label_for_dropdown,
             index=0
         )
 
-    # Show chosen record (pretty key/value)
+    # Show chosen facility (pretty key/value)
     chosen_display = (
         df.loc[[chosen_idx], RESOLVED_COLS].rename(columns=RENAME_MAP)
         if RESOLVED_COLS else df.loc[[chosen_idx]]
     )
-    st.subheader("Selected record")
+    st.subheader("Selected facility")
     st.table(chosen_display.reset_index(drop=True).T.rename(columns={0: "Value"}))
 
     # --- Edit Form ---
-    st.subheader("Edit this record")
+    st.subheader("Edit this facility")
     with st.form(key=f"edit_{chosen_idx}"):
         # Make sure all desired columns exist (for editing). We'll add missing ones on save.
         inputs = {}
@@ -208,7 +208,7 @@ else:
             st.cache_data.clear()
             st.rerun()
 
-# --- Add New Record ---
+# --- Add New Facility ---
 st.markdown("---")
 st.subheader("Add a new facility")
 with st.form("create_form"):
@@ -219,7 +219,7 @@ with st.form("create_form"):
         create_inputs[display_name] = st.text_input(display_name, value=default_val)
 
     enforce_unique = st.checkbox("Require unique Company name (case-insensitive)", value=True)
-    create = st.form_submit_button("Create record")
+    create = st.form_submit_button("Create Facility")
 
     if create:
         st.cache_data.clear()
@@ -247,6 +247,6 @@ with st.form("create_form"):
 
         atomic_write_csv(CSV_PATH, df_fresh)
 
-        st.success("New record added to CSV.")
+        st.success("New facility added to CSV.")
         st.cache_data.clear()
         st.rerun()
