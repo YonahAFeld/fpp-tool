@@ -4,7 +4,7 @@ import tempfile
 import pandas as pd
 import streamlit as st
 
-st.set_page_config(page_title="Company and Facility Lookup", page_icon="🔎", layout="centered")
+st.set_page_config(page_title="Company Lookup", page_icon="🔎", layout="centered")
 
 # --- Configuration ---
 CSV_PATH = "companies.csv"        # Path to your CSV file
@@ -86,9 +86,19 @@ def load_data(path: str):
 
 df, SEARCH_COL, RESOLVED_COLS, RENAME_MAP, MISSING, COL_MAP, DISPLAY_TO_ACTUAL = load_data(CSV_PATH)
 
-# --- UI ---
-st.title("🔎 Company and Facility Lookup (CSV)")
-st.caption("Search by company name. Pick a record to edit, or add a new one. Changes are saved to the CSV.")
+# --- Header / Export ---
+st.title("🔎 Company Lookup (CSV)")
+
+# Download the ENTIRE backend CSV (current contents on disk)
+st.download_button(
+    label="⬇️ Download full CSV",
+    data=df.to_csv(index=False).encode("utf-8"),
+    file_name="companies_export.csv",
+    mime="text/csv",
+    help="Exports the entire backend CSV as it exists right now."
+)
+
+st.caption("Search by company name. Pick a record to edit, or add a new one. Changes save back to the CSV.")
 
 c1, c2 = st.columns([3, 1])
 with c1:
@@ -156,7 +166,33 @@ else:
             index=0
         )
 
-    # Show chosen facility (pretty key/value)
+    # Downloads for current results and selected record
+    dlc1, dlc2 = st.columns(2)
+    with dlc1:
+        st.download_button(
+            label="⬇️ Download search results CSV",
+            data=view.to_csv(index=False).encode("utf-8"),
+            file_name="companies_search.csv",
+            mime="text/csv",
+            help="Exports only the rows matching your current search."
+        )
+    with dlc2:
+        # Build a safe filename based on the selected company's name when available
+        selected_company = ""
+        try:
+            selected_company = str(df.loc[chosen_idx, COL_MAP.get(SEARCH_COL_NAME.lower(), SEARCH_COL)]).strip()
+        except Exception:
+            selected_company = "record"
+        safe_name = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in (selected_company or "record")) or "record"
+        st.download_button(
+            label="⬇️ Download selected record CSV",
+            data=df.loc[[chosen_idx]].to_csv(index=False).encode("utf-8"),
+            file_name=f"company_{safe_name}.csv",
+            mime="text/csv",
+            help="Exports only the selected record as a one-row CSV."
+        )
+
+    # Show chosen record (pretty key/value)
     chosen_display = (
         df.loc[[chosen_idx], RESOLVED_COLS].rename(columns=RENAME_MAP)
         if RESOLVED_COLS else df.loc[[chosen_idx]]
@@ -208,7 +244,7 @@ else:
             st.cache_data.clear()
             st.rerun()
 
-# --- Add New Facility ---
+# --- Add New Record ---
 st.markdown("---")
 st.subheader("Add a new facility")
 with st.form("create_form"):
@@ -219,7 +255,7 @@ with st.form("create_form"):
         create_inputs[display_name] = st.text_input(display_name, value=default_val)
 
     enforce_unique = st.checkbox("Require unique Company name (case-insensitive)", value=True)
-    create = st.form_submit_button("Create Facility")
+    create = st.form_submit_button("Create facility")
 
     if create:
         st.cache_data.clear()
@@ -247,6 +283,6 @@ with st.form("create_form"):
 
         atomic_write_csv(CSV_PATH, df_fresh)
 
-        st.success("New facility added to CSV.")
+        st.success("New record added to CSV.")
         st.cache_data.clear()
         st.rerun()
